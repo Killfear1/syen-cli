@@ -3,9 +3,36 @@
   "version": "0.1.0",
   "description": "Command line interface for SYEN Comply: product facts, the regulatory intelligence feed, and offline verification of exported evidence bundles.",
   "license": "MIT",
-  "private": true,
   "type": "commonjs",
-  "bin": { "syen": "bin/syen.js" },
-  "engines": { "node": ">=18" },
-  "scripts": { "test": "node --test test/cli.test.js" }
+  "bin": {
+    "syen": "bin/syen.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/cli.test.js"
+  },
+  "author": "SYEN Systems LLC <support@syensystems.com>",
+  "homepage": "https://www.syensystems.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Killfear1/syen-cli.git"
+  },
+  "bugs": "https://github.com/Killfear1/syen-cli/issues",
+  "keywords": [
+    "syen",
+    "syen-comply",
+    "audit-trail",
+    "evidence",
+    "ed25519",
+    "rfc8785",
+    "verification",
+    "compliance"
+  ],
+  "files": [
+    "bin",
+    "lib",
+    "README.md"
+  ]
 }

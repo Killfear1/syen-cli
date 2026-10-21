@@ -12,14 +12,12 @@ Zero dependencies. Requires Node.js 18 or newer.
 
 ## Install
 
-Until the package is published, run it from a clone:
-
 ```sh
-node bin/syen.js --help
-# or link it onto your PATH:
-npm link
+npm install -g syen-cli
 syen --help
 ```
+
+From a clone instead: `node bin/syen.js --help`, or `npm link` to put `syen` on your PATH.
 
 ## Usage
 
