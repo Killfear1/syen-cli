@@ -13,7 +13,7 @@ Zero dependencies. Requires Node.js 18 or newer.
 ## Install
 
 ```sh
-npm install -g syen-cli
+npm install -g @syensystems/syen-cli
 syen --help
 ```
 
@@ -31,31 +31,24 @@ syen verify <bundle.json>       # offline evidence-bundle verification
 
 ## What verify checks, and what it does not
 
-Bundle format `syen-evidence-bundle/v1`:
+`syen verify` reads an exported SYEN evidence bundle (schema `syen.evidence-bundle/1`, what the
+SYEN Comply API's `GET /api/v1/evidence/export` produces for a tenant) and checks it entirely
+offline, with the same rules as the verifier SYEN ships:
 
-```json
-{
-  "format": "syen-evidence-bundle/v1",
-  "public_key_pem": "-----BEGIN PUBLIC KEY-----\n... Ed25519 SubjectPublicKeyInfo ...",
-  "records": [
-    {
-      "id": "rec-0",
-      "payload": { "event": "receipt.issued", "amount": 42 },
-      "hash": "<64 hex chars>",
-      "signature": "<base64 Ed25519 signature over the hash>",
-      "timestamp_token": "<optional base64 RFC 3161 token>"
-    }
-  ]
-}
+- every event's SHA-256 chain hash recomputes from its RFC 8785 (JCS) canonical content,
+- events link to their predecessors, with gap and duplicate detection,
+- receipt references match event hashes,
+- Ed25519 signatures verify - only against a key YOU supply: `--trusted-pubkey <base64>`.
+  A public key embedded in the bundle is never trusted, because whoever edits a bundle can swap it.
+
+```sh
+syen verify bundle.json --trusted-pubkey <base64> --tenant <tenant-id>
+syen verify bundle.json --json     # full report: verdict, failures, warnings, counts
 ```
 
-For each record, in order:
-
-- **Chain** - recomputes `sha256(previous_hash || rfc8785_canonical(payload))` and compares it to `record.hash`. The first record chains from 64 zeroes. A tampered payload breaks the link; a tampered hash breaks every later link.
-- **Signature** - verifies the Ed25519 signature over `record.hash` against the bundle's public key.
-- **Timestamp** - if an RFC 3161 token is present, checks that it decodes and parses structurally. **Trust is not checked**: deciding a timestamp token is genuine requires the timestamp authority's root certificates, which this tool does not bundle. The output says exactly that.
-
-Exit code 0 only when every chain link and every signature verifies. Canonicalization is RFC 8785 (JSON Canonicalization Scheme); numbers serialize per the ECMAScript algorithm the RFC specifies.
+Verdicts: `PASS`, `PASS_WITH_LIMITS`, `INCOMPLETE`, `FAIL`. Exit codes: 0 pass, 1 fail,
+2 incomplete export. A passing verdict means integrity and signer attribution only - not that
+any claim inside a record is true.
 
 ## Tests
 

@@ -1,0 +1,70 @@
+{
+ "schema": "syen.evidence-bundle/1",
+ "tenant_id": "acme-prod",
+ "exported_at": "2026-10-20T15:00:00Z",
+ "complete": true,
+ "events": [
+  {
+   "event_id": "d562eae0-c74a-477b-a0ea-77dcf4a7306d",
+   "stream_id": "acme-prod:audit:main",
+   "sequence_counter": 1,
+   "timestamp_utc": "2026-10-20T14:01:00Z",
+   "event_data": {
+    "tenant_id": "acme-prod",
+    "stream_id": "acme-prod:audit:main",
+    "payload": {
+     "actor": "agent:planner-7",
+     "action": "compliance.check",
+     "detail": "control SOC2-CC6.1 evaluated",
+     "outcome": "pass-changed"
+    }
+   },
+   "integrity_hash": "6952a0a99326ba110a6ff591ed4dcd0ab6ee853dc20e7df1ca49df1076521842",
+   "previous_event_hash": null,
+   "tee_signature": "tpEO6eVrlcHX0Z8CkCuY823XeQieb3Cmd3tJEgFDGKx9b7ulf0aVLEUkP72+1eOK4zN1BRsIQ3QXacBFI+6WDA=="
+  },
+  {
+   "event_id": "9f41d392-002b-4b9f-8dc6-d894d43e689e",
+   "stream_id": "acme-prod:audit:main",
+   "sequence_counter": 2,
+   "timestamp_utc": "2026-10-20T14:02:00Z",
+   "event_data": {
+    "tenant_id": "acme-prod",
+    "stream_id": "acme-prod:audit:main",
+    "payload": {
+     "actor": "agent:planner-7",
+     "action": "compliance.check",
+     "detail": "control SOC2-CC7.2 evaluated",
+     "outcome": "flag"
+    }
+   },
+   "integrity_hash": "9c2eb2e8265bc30b62b259444c783f73ec077565b84987718ec640c2b46c3641",
+   "previous_event_hash": "6952a0a99326ba110a6ff591ed4dcd0ab6ee853dc20e7df1ca49df1076521842",
+   "tee_signature": "YugkDBUVrRrsYMwEIu1exXiO1EHy1Y/BWYNWBu8jVD4sIjycQFRzG7u0MRNW6s9A75sYgvCCSZmPUrH0at6dCQ=="
+  }
+ ],
+ "receipts": [
+  {
+   "receipt_id": "rcpt-3d4d93008384",
+   "tenant_id": "acme-prod",
+   "family": "compliance",
+   "created_at": "2026-10-20T14:05:00Z",
+   "signed_receipt": {
+    "stages": {
+     "evaluation": {
+      "event_id": "d562eae0-c74a-477b-a0ea-77dcf4a7306d",
+      "integrity_hash": "6952a0a99326ba110a6ff591ed4dcd0ab6ee853dc20e7df1ca49df1076521842"
+     },
+     "disposition": {
+      "event_id": "9f41d392-002b-4b9f-8dc6-d894d43e689e",
+      "integrity_hash": "9c2eb2e8265bc30b62b259444c783f73ec077565b84987718ec640c2b46c3641"
+     }
+    }
+   }
+  }
+ ],
+ "readings_verdicts": [],
+ "manifest": {
+  "sha256": "351330c2887f64d91c5712963b664b1e0615ac48dd976995bfb95455637a8af4"
+ }
+}

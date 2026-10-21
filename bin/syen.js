@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 const fs = require('node:fs');
-const { verifyBundle } = require('../lib/verify');
+const { verifyBundle } = require('../lib/verifier');
 
 const BASE = (process.env.SYEN_API_BASE || 'https://www.syensystems.com').replace(/\/+$/, '');
 const VERSION = require('../package.json').version;
@@ -11,8 +11,11 @@ const HELP = `syen - command line for SYEN Comply
 Usage:
   syen meta [--json]              Product facts: vendor, verification scheme, pricing, availability
   syen news [--json] [--limit N]  Regulatory intelligence feed (curated AI-governance headlines)
-  syen verify <bundle.json>       Verify an exported evidence bundle offline
-                                  (SHA-256 chain + Ed25519 signatures; no network, no SYEN account)
+  syen verify <bundle.json>       Verify an exported SYEN evidence bundle (syen.evidence-bundle/1)
+                                  offline: SHA-256 chain + Ed25519 signatures; no network needed
+    --trusted-pubkey <base64>     Tenant Ed25519 public key to check signatures against
+    --tenant <tenant-id>          Tenant the bundle must belong to (recommended)
+    --json                        Full report as JSON (verdict, failures, warnings, counts)
   syen --version
   syen --help
 
@@ -67,20 +70,19 @@ async function main() {
 
   if (cmd === 'verify') {
     const file = process.argv[3];
-    if (!file || file.startsWith('--')) { console.error('usage: syen verify <bundle.json>'); process.exit(2); }
+    if (!file || file.startsWith('--')) { console.error('usage: syen verify <bundle.json> [--trusted-pubkey B64] [--tenant ID] [--json]'); process.exit(2); }
     let bundle;
     try { bundle = JSON.parse(fs.readFileSync(file, 'utf8')); }
     catch (e) { console.error(`cannot read bundle: ${e.message}`); process.exit(2); }
-    let result;
-    try { result = verifyBundle(bundle); }
-    catch (e) { console.error(`FAIL - ${e.message}`); process.exit(1); }
-    if (argsHas('--json')) { console.log(JSON.stringify(result, null, 2)); }
+    const report = verifyBundle(bundle, argValue('--trusted-pubkey', null), argValue('--tenant', null));
+    if (argsHas('--json')) { console.log(JSON.stringify(report, null, 1)); }
     else {
-      for (const r of result.records)
-        console.log(`record ${r.index}${r.id ? ' (' + r.id + ')' : ''}: chain ${r.chain}, signature ${r.signature}, timestamp ${r.timestamp}${r.error ? ' - ' + r.error : ''}`);
-      console.log(`${result.ok ? 'PASS' : 'FAIL'} - ${result.records_checked} record(s) verified offline`);
+      console.log(report.verdict, JSON.stringify(report.checked));
+      for (const x of report.failures) console.log('FAIL', JSON.stringify(x));
+      for (const x of report.warnings) console.log('warn', JSON.stringify(x));
+      console.log(report.meaning);
     }
-    process.exit(result.ok ? 0 : 1);
+    process.exit(report.verdict === 'FAIL' ? 1 : report.verdict === 'INCOMPLETE' ? 2 : 0);
   }
 
   console.error(`unknown command: ${cmd}\n`);

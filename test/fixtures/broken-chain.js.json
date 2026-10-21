@@ -1,0 +1,41 @@
+{
+ "verdict": "FAIL",
+ "failures": [
+  {
+   "code": "MANIFEST_MISMATCH",
+   "detail": "bundle content changed after export (or manifest missing)"
+  },
+  {
+   "code": "HASH_MISMATCH",
+   "event_id": "9f41d392-002b-4b9f-8dc6-d894d43e689e",
+   "sequence": 2
+  },
+  {
+   "code": "BROKEN_CHAIN",
+   "stream_id": "acme-prod:audit:main",
+   "at_sequence": 2
+  }
+ ],
+ "warnings": [
+  {
+   "code": "MANIFEST_NOT_AUTHENTICATED",
+   "detail": "the manifest hash detects edits; it is not signed, so it does not show who exported"
+  }
+ ],
+ "checked": {
+  "events": 2,
+  "chain_links": 1,
+  "receipt_references": 2,
+  "signatures_verified": 2,
+  "signatures_unchecked": 0,
+  "verdict_payloads_bound": 0,
+  "legacy_format": false
+ },
+ "limits": [
+  "tail truncation is undetectable if the referencing receipt is dropped too",
+  "no freshness check on exported_at",
+  "legacy-format bundles skip manifest and receipt checks",
+  "the manifest is unsigned by design"
+ ],
+ "meaning": "Integrity and signer attribution only. A valid record does not show that its claims are true."
+}
