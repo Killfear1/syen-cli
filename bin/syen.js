@@ -42,6 +42,8 @@ Operator commands (exit: 0 ok/ALLOW, 1 API error, 2 usage, 3 DENY, 4 REQUIRE_APP
   syen --version
   syen --help
 
+Portal (browser access): https://portal.syensystems.com
+
 Environment:
   SYEN_API_BASE         Override the API origin for meta/news (default https://www.syensystems.com)
   SYEN_BASE_URL         API origin for operator commands (default https://api.syensystems.com)

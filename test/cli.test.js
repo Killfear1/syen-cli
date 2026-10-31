@@ -296,5 +296,60 @@ test('cli doctor reports pass/fail per check and never prints a key', async () =
     assert.deepStrictEqual(JSON.parse(j.stdout).checks.map((c) => [c.name, c.pass]), [['connectivity', true], ['api_key', true], ['export_key', false]]);
     for (const out of [r.stdout, r.stderr, j.stdout, j.stderr]) assert.ok(!/SECRET-/.test(out), out);
     assert.strictEqual(s.seen[0].url, '/api/v1/health');
+    assert.match(r.stderr, /Portal \(browser access\): https:\/\/portal\.syensystems\.com/);
   } finally { await s.close(); }
+});
+
+// Production shape: no status / revoked fields; revoked_at is null when active. List is wrapped.
+const MANDATES = { 'm-1': { mandate_id: 'm-1', agent_id: 'agent-1', digest: 'd1', revoked_at: null },
+  'm-2': { mandate_id: 'm-2', agent_id: 'agent-1', digest: 'd2', revoked_at: '2026-10-30T00:00:00Z' } };
+const mandateRoutes = (req) => {
+  if (req.url === '/api/v1/authority/mandates') return [200, { mandates: Object.values(MANDATES) }];
+  const m = MANDATES[decodeURIComponent(req.url.replace('/api/v1/authority/mandates/', ''))];
+  return m ? [200, m] : [404, { detail: 'not found' }];
+};
+
+test('cli mandate get reads GET /authority/mandates/{id} and renders id + status', async () => {
+  const s = await opServer(mandateRoutes);
+  try {
+    const r = await cli(['mandate', 'get', '--id', 'm-1', '--token', 'tk', '--base-url', s.url]);
+    assert.strictEqual(r.status, 0, r.stderr);
+    assert.match(r.stdout, /^mandate m-1: ACTIVE/);
+    assert.ok(!/decision|approximation|no direct mandate GET/i.test(r.stdout), r.stdout);
+    assert.strictEqual(s.seen[0].method, 'GET');
+    assert.strictEqual(s.seen[0].url, '/api/v1/authority/mandates/m-1');
+    assert.strictEqual(s.seen[0].auth, 'Bearer tk');
+    const j = await cli(['mandate', 'get', '--id', 'm-1', '--token', 'tk', '--json', '--base-url', s.url]);
+    assert.deepStrictEqual(JSON.parse(j.stdout), MANDATES['m-1']);
+  } finally { await s.close(); }
+});
+
+test('cli mandate get renders a revoked mandate as REVOKED', async () => {
+  const s = await opServer(mandateRoutes);
+  try {
+    const r = await cli(['mandate', 'get', '--id', 'm-2', '--token', 'tk', '--base-url', s.url]);
+    assert.strictEqual(r.status, 0, r.stderr);
+    assert.match(r.stdout, /^mandate m-2: REVOKED/);
+    const j = await cli(['mandate', 'get', '--id', 'm-2', '--token', 'tk', '--json', '--base-url', s.url]);
+    assert.deepStrictEqual(JSON.parse(j.stdout), MANDATES['m-2']);
+  } finally { await s.close(); }
+});
+
+test('cli mandate list renders one line per mandate and exits 0', async () => {
+  const s = await opServer(mandateRoutes);
+  try {
+    const r = await cli(['mandate', 'list', '--token', 'tk', '--base-url', s.url]);
+    assert.strictEqual(r.status, 0, r.stderr);
+    assert.deepStrictEqual(r.stdout.trim().split('\n'), ['m-1: ACTIVE', 'm-2: REVOKED']);
+    assert.strictEqual(s.seen[0].url, '/api/v1/authority/mandates');
+    const j = await cli(['mandate', 'list', '--token', 'tk', '--json', '--base-url', s.url]);
+    assert.strictEqual(j.status, 0, j.stderr);
+    assert.deepStrictEqual(JSON.parse(j.stdout), { mandates: Object.values(MANDATES) });
+  } finally { await s.close(); }
+});
+
+test('cli help shows the portal page', () => {
+  const r = spawnSync('node', ['bin/syen.js', '--help'], { encoding: 'utf8' });
+  assert.strictEqual(r.status, 0);
+  assert.match(r.stdout, /Portal \(browser access\): https:\/\/portal\.syensystems\.com/);
 });

@@ -1,6 +1,6 @@
 {
   "name": "@syensystems/syen-cli",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Command line interface for SYEN Comply: product facts, the regulatory intelligence feed, and offline verification of exported evidence bundles.",
   "license": "MIT",
   "type": "commonjs",
