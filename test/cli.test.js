@@ -348,6 +348,40 @@ test('cli mandate list renders one line per mandate and exits 0', async () => {
   } finally { await s.close(); }
 });
 
+// Production shape with sealed fields + expires_at; fixed timestamps only (never the current time).
+const sealed = (id, revoked_at, expires_at) => ({ mandate_id: id, principal: 'p@x', agent_id: 'agent-1', allowed_actions: ['pay'], max_amount: 100,
+  currency: 'USD', not_before: '2019-01-01T00:00:00Z', expires_at, digest: `d-${id}`, revoked_at });
+const EXP_MANDATES = { 'm-a': sealed('m-a', null, '2999-01-01T00:00:00Z'), 'm-r': sealed('m-r', '2026-10-30T00:00:00Z', '2999-01-01T00:00:00Z'),
+  'm-e': sealed('m-e', null, '2020-01-01T00:00:00Z'), 'm-re': sealed('m-re', '2019-06-01T00:00:00Z', '2020-01-01T00:00:00Z') };
+const EXP_WANT = [['m-a', 'ACTIVE'], ['m-r', 'REVOKED'], ['m-e', 'EXPIRED'], ['m-re', 'REVOKED']];
+const expRoutes = (req) => {
+  if (req.url === '/api/v1/authority/mandates') return [200, { mandates: Object.values(EXP_MANDATES) }];
+  const m = EXP_MANDATES[decodeURIComponent(req.url.replace('/api/v1/authority/mandates/', ''))];
+  return m ? [200, m] : [404, { detail: 'not found' }];
+};
+
+for (const [id, want] of EXP_WANT) {
+  test(`cli mandate get renders production mandate ${id} as ${want}`, async () => {
+    const s = await opServer(expRoutes);
+    try {
+      const r = await cli(['mandate', 'get', '--id', id, '--token', 'tk', '--base-url', s.url]);
+      assert.strictEqual(r.status, 0, r.stderr);
+      assert.match(r.stdout, new RegExp(`^mandate ${id}: ${want}\\n`));
+      const j = await cli(['mandate', 'get', '--id', id, '--token', 'tk', '--json', '--base-url', s.url]);
+      assert.deepStrictEqual(JSON.parse(j.stdout), EXP_MANDATES[id]);
+    } finally { await s.close(); }
+  });
+}
+
+test('cli mandate list renders ACTIVE, REVOKED, EXPIRED, and REVOKED-over-EXPIRED', async () => {
+  const s = await opServer(expRoutes);
+  try {
+    const r = await cli(['mandate', 'list', '--token', 'tk', '--base-url', s.url]);
+    assert.strictEqual(r.status, 0, r.stderr);
+    assert.deepStrictEqual(r.stdout.trim().split('\n'), EXP_WANT.map(([id, w]) => `${id}: ${w}`));
+  } finally { await s.close(); }
+});
+
 test('cli help shows the portal page', () => {
   const r = spawnSync('node', ['bin/syen.js', '--help'], { encoding: 'utf8' });
   assert.strictEqual(r.status, 0);
